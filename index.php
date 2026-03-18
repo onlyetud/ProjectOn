@@ -1,4 +1,4 @@
 <?php
 // Simple index: redirect to login
-header('Location: /project/auth/login.php');
+header('Location: /projectos/auth/login.php');
 exit;

@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['role'] = $user['role'];
                 $_SESSION['logged_in'] = true;
 
-                header('Location: /project/dashboard/index.php');
+                header('Location: /projectos/dashboard/index.php');
                 exit;
             }
         } else {
@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Login</title>
-    <link rel="stylesheet" href="/project/css/style.css">
+    <link rel="stylesheet" href="/projectos/css/style.css">
 </head>
 <body>
 <div class="center-wrap">
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit">Login</button>
         </form>
 
-        <p class="muted">Don't have an account? <a href="/project/auth/register.php">Register</a></p>
+        <p class="muted">Don't have an account? <a href="/projectos/auth/register.php">Register</a></p>
     </div>
 </div>
 </body>

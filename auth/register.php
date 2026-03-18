@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $insert = $pdo->prepare('INSERT INTO users (username, email, password) VALUES (:username, :email, :password)');
             try {
                 $insert->execute(['username' => $username, 'email' => $email, 'password' => $hash]);
-                header('Location: /project/auth/login.php?registered=1');
+                header('Location: /projectos/auth/login.php?registered=1');
                 exit;
             } catch (PDOException $e) {
                 $errors[] = 'Registration failed. Please try again.';
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Register</title>
-    <link rel="stylesheet" href="/project/css/style.css">
+    <link rel="stylesheet" href="/projectos/css/style.css">
 </head>
 <body>
 <div class="center-wrap">
@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit">Register</button>
         </form>
 
-        <p class="muted">Already have an account? <a href="/project/auth/login.php">Sign in</a></p>
+        <p class="muted">Already have an account? <a href="/projectos/auth/login.php">Sign in</a></p>
     </div>
 </div>
 </body>
