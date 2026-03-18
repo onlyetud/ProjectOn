@@ -5,7 +5,7 @@
     <nav class="nav">
         <ul>
 <li class="nav-item active">
-    <a href="#">
+    <a href="index.php">
         <span class="icon"><i class="fa-solid fa-house"></i></span>
         <span class="text">Dashboard</span>
     </a>

@@ -130,7 +130,7 @@
                         <input type="hidden" name="csrf_token" value="<?=htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8')?>">
                         <input type="hidden" name="action" value="delete_stakeholder">
                         <input type="hidden" name="id" value="">
-                        <p>Are you sure you want to remove this stakeholder? This is a soft delete.</p>
+                        <p>Are you sure you want to remove this stakeholder? </p>
                         <div class="modal-actions">
                             <button type="submit" class="btn">Yes, remove</button>
                             <button type="button" class="btn ghost" data-close="true">Cancel</button>
@@ -217,7 +217,7 @@
                         <input type="hidden" name="csrf_token" value="<?=htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8')?>">
                         <input type="hidden" name="action" value="delete_nt">
                         <input type="hidden" name="id" value="">
-                        <p>Are you sure you want to remove this NT record? This is a soft delete.</p>
+                        <p>Are you sure you want to remove this NT record?</p>
                         <div class="modal-actions">
                             <button type="submit" class="btn">Yes, remove</button>
                             <button type="button" class="btn ghost" data-close="true">Cancel</button>

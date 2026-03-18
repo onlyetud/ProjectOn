@@ -178,7 +178,7 @@ input[type="text"],input[type="email"],input[type="password"]{
 button, .button{
   display:inline-block;
   /* width:100%; */
-  padding:12px 14px;
+  padding:5px 14px;
   /* margin-top:16px; */
   background:var(--accent);
   color:#fff;
@@ -202,7 +202,7 @@ button, .button{
 .controls input[type="search"]{width:100%;padding:10px;border-radius:8px;border:1px solid #e6eef7}
 .table-wrap{overflow:auto;background:transparent}
 table.stake-table{width:100%;border-collapse:collapse}
-table.stake-table th, table.stake-table td{padding:10px 12px;text-align:left;border-bottom:1px solid #eef2f7}
+table.stake-table th, table.stake-table td{padding:2px 12px;text-align:left;border-bottom:1px solid #eef2f7}
 .actions{display:flex;gap:8px;align-items:center}
 .nt-sub{background:#fbfdff;padding:10px;border-radius:8px}
 .nt-table{width:100%;margin-top:8px;border-collapse:collapse}

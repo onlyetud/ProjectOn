@@ -108,14 +108,18 @@ $pdo = getDB();
 $params = [];
 $where = 'WHERE deleted_at IS NULL';
 if ($q !== '') {
-    $like = '%' . $q . '%';
-    $where .= ' AND (name LIKE :like OR organization LIKE 
-    :like2 OR  wilaya LIKE :like4)'; 
-    $params[':like2'] = $like; 
-    $params[':like4'] = $like;
+    $keyword= '%' . $q . '%';
+    $where .= ' AND (
+    name LIKE :like OR
+    organization LIKE :like2 OR
+    wilaya LIKE :like4)'; 
+    
+    $params[':like'] = $keyword; 
+    $params[':like2'] = $keyword; 
+    $params[':like4'] = $keyword;
 }
 
-$stmt = $pdo->prepare("SELECT id, name, organization , wilaya, phone FROM stakeholders ORDER BY created_at DESC");
+$stmt = $pdo->prepare("SELECT id, name, organization , wilaya, phone FROM stakeholders  $where ORDER BY created_at DESC");
 $stmt->execute($params);
 $stakeholders = $stmt->fetchAll();
 
@@ -165,8 +169,7 @@ if (!empty($stakeIds)) {
         <div class="table-wrap">
             <table class="stake-table">
                 <thead>
-                    <tr>
-                        <th>ID</th>
+                    <tr> 
                         <th>Name</th>
                         <th>Organization</th> 
                         <th>Wilaya</th>
@@ -177,7 +180,7 @@ if (!empty($stakeIds)) {
                 <tbody>
                 <?php foreach ($stakeholders as $s): ?>
                     <tr class="stake-row" data-id="<?=htmlspecialchars($s['id'], ENT_QUOTES, 'UTF-8')?>">
-                        <td><?=htmlspecialchars($s['id'], ENT_QUOTES, 'UTF-8')?></td>
+                      
                         <td><?=htmlspecialchars($s['name'], ENT_QUOTES, 'UTF-8')?></td>
                         <td><?=htmlspecialchars($s['organization'], ENT_QUOTES, 'UTF-8')?></td>
                   
@@ -203,9 +206,7 @@ if (!empty($stakeIds)) {
                         <td colspan="7">
                             <div class="nt-sub"> 
                                 <table class="nt-table">
-                                    <thead>
-                                        <tr><th>Code</th><th>Name</th><th>Description</th><th>Actions</th></tr>
-                                    </thead>
+                                 
                                     <tbody>
                                     <?php if (!empty($ntsByStake[$s['id']] ?? [])): foreach ($ntsByStake[$s['id']] as $n): ?>
                                         <tr>
