@@ -54,4 +54,14 @@
             });
         }
     });
+    
+    // Fill modal forms from data attributes helper
+    window.fillForm = function(modalId, values) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        Object.keys(values).forEach(function(k){
+            const field = modal.querySelector('[name="'+k+'"]');
+            if (field) field.value = values[k];
+        });
+    };
 })();
