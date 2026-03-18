@@ -12,7 +12,7 @@
 </li>
 
 <li class="nav-item">
-    <a href="#">
+    <a href="projects.php">
         <span class="icon"><i class="fa-solid fa-folder"></i></span>
         <span class="text">Projects</span>
     </a>
