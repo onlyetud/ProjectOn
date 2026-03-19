@@ -204,12 +204,12 @@ $stakeholders = $stmt->fetchAll();
             <table class="project-table stake-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th  hidden >ID</th>
                         <th>Project Name</th>
                         <th>Wilaya</th>
-                        <th>Commune</th>
+                        <th  hidden >Commune</th>
                         <th>Status</th>
-                        <th>Client</th>
+                        <th  hidden>Client</th>
                         <th>Start</th>
                         <th>End</th>
                         <th>Actions</th>
@@ -238,12 +238,12 @@ $stakeholders = $stmt->fetchAll();
                         data-budget="<?=htmlspecialchars($p['budget'] ?? '', ENT_QUOTES, 'UTF-8')?>"
                         data-other_info="<?=htmlspecialchars($p['other_info'] ?? '', ENT_QUOTES, 'UTF-8')?>"
                     >
-                        <td><?=htmlspecialchars($p['id'], ENT_QUOTES, 'UTF-8')?></td>
+                        <td hidden ><?=htmlspecialchars($p['id'], ENT_QUOTES, 'UTF-8')?></td>
                         <td><?=htmlspecialchars($p['project_name'], ENT_QUOTES, 'UTF-8')?></td>
                         <td><?=htmlspecialchars($p['wilaya'] ?? '', ENT_QUOTES, 'UTF-8')?></td>
-                        <td><?=htmlspecialchars($p['commune'] ?? '', ENT_QUOTES, 'UTF-8')?></td>
+                        <td hidden ><?=htmlspecialchars($p['commune'] ?? '', ENT_QUOTES, 'UTF-8')?></td>
                         <td><?=htmlspecialchars($p['status'] ?? '', ENT_QUOTES, 'UTF-8')?></td>
-                        <td><?=htmlspecialchars($p['client'] ?? '', ENT_QUOTES, 'UTF-8')?></td>
+                        <td hidden ><?=htmlspecialchars($p['client'] ?? '', ENT_QUOTES, 'UTF-8')?></td>
                         <td><?=htmlspecialchars($p['start_date'] ?? '', ENT_QUOTES, 'UTF-8')?></td>
                         <td><?=htmlspecialchars($p['end_date'] ?? '', ENT_QUOTES, 'UTF-8')?></td>
                         <td>
@@ -259,15 +259,15 @@ $stakeholders = $stmt->fetchAll();
                     <tr class="lots-row hidden" data-parent="<?=htmlspecialchars($p['id'], ENT_QUOTES, 'UTF-8')?>">
                         <td colspan="9">
                             <div class="nt-sub">
-                                <div class="flex-between">
+                                <div class="flex-between hidden">
                                     <strong>Project Lots</strong>
                                 </div>
                                 <table class="nt-table">
-                                    <thead><tr><th>ID</th><th>Lot Code</th><th>Lot Name</th><th>Status</th><th>Contractor</th><th>Bureau Etude</th><th>Actions</th></tr></thead>
+                                    <thead  ><tr><th hidden >ID</th><th>Lot Code</th><th>Lot Name</th><th>Status</th><th>Contractor</th><th>Bureau Etude</th><th>Actions</th></tr></thead>
                                     <tbody>
                                     <?php foreach ($lotsByProj[$p['id']] ?? [] as $l): ?>
                                         <tr>
-                                            <td><?=htmlspecialchars($l['id'], ENT_QUOTES, 'UTF-8')?></td>
+                                            <td hidden ><?=htmlspecialchars($l['id'], ENT_QUOTES, 'UTF-8')?></td>
                                             <td><?=htmlspecialchars($l['lot_code'] ?? '', ENT_QUOTES, 'UTF-8')?></td>
                                             <td><?=htmlspecialchars($l['lot_name'] ?? '', ENT_QUOTES, 'UTF-8')?></td>
                                             <td><?=htmlspecialchars($l['status'] ?? '', ENT_QUOTES, 'UTF-8')?></td>
@@ -275,7 +275,7 @@ $stakeholders = $stmt->fetchAll();
                                             <td><?=htmlspecialchars($stakeMap[$l['bureau_etude_id']] ?? '', ENT_QUOTES, 'UTF-8')?></td>
                                             <td>
                                                 <div class="actions">
-                                                    <button class="btn ghost open-edit-lot"
+                                                    <button class="btn  btn-edit open-edit-lot"
                                                         data-id="<?=htmlspecialchars($l['id'], ENT_QUOTES, 'UTF-8')?>"
                                                         data-project_id="<?=htmlspecialchars($l['project_id'], ENT_QUOTES, 'UTF-8')?>"
                                                         data-lot_code="<?=htmlspecialchars($l['lot_code'] ?? '', ENT_QUOTES, 'UTF-8')?>"
@@ -285,7 +285,7 @@ $stakeholders = $stmt->fetchAll();
                                                         data-bureau_etude_id="<?=htmlspecialchars($l['bureau_etude_id'] ?? '', ENT_QUOTES, 'UTF-8')?>"
                                                         data-status="<?=htmlspecialchars($l['status'] ?? '', ENT_QUOTES, 'UTF-8')?>"
                                                     ><i class="fa-solid fa-pen-to-square"></i></button>
-                                                    <button class="btn ghost open-delete-lot" data-id="<?=htmlspecialchars($l['id'], ENT_QUOTES, 'UTF-8')?>"><i class="fa-solid fa-trash"></i></button>
+                                                    <button class="btn  btn-delete open-delete-lot" data-id="<?=htmlspecialchars($l['id'], ENT_QUOTES, 'UTF-8')?>"><i class="fa-solid fa-trash"></i></button>
                                                 </div>
                                             </td>
                                         </tr>

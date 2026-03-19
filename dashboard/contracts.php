@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $end_date = $_POST['end_date'] ?: null;
                 $entreA = $_POST['entrepriseA_id'] !== '' ? (int)$_POST['entrepriseA_id'] : null;
                 $entreB = $_POST['entrepriseB_id'] !== '' ? (int)$_POST['entrepriseB_id'] : null;
+                $project_id = $_POST['project_id'] !== '' ? (int)$_POST['project_id'] : null;
                 $value = $_POST['value'] !== '' ? number_format((float)$_POST['value'], 2, '.', '') : null;
                 $currency = trim((string)($_POST['currency'] ?? ''));
 
@@ -48,8 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if (empty($errors)) {
-                    $ins = $pdo->prepare('INSERT INTO contracts (title, description, contract_number, status, start_date, end_date, entrepriseA_id, entrepriseB_id, value, currency, created_at, updated_at) VALUES (:title,:desc,:cn,:status,:start,:end,:ea,:eb,:value,:currency,NOW(),NOW())');
-                    $ins->execute([':title'=>$title,':desc'=>$description,':cn'=>$contract_number,':status'=>$status,':start'=>$start_date,':end'=>$end_date,':ea'=>$entreA,':eb'=>$entreB,':value'=>$value,':currency'=>$currency]);
+                    $ins = $pdo->prepare('INSERT INTO contracts (title, description, contract_number, status, start_date, end_date, entrepriseA_id, entrepriseB_id, project_id, value, currency, created_at, updated_at) VALUES (:title,:desc,:cn,:status,:start,:end,:ea,:eb,:project_id,:value,:currency,NOW(),NOW())');
+                    $ins->execute([':title'=>$title,':desc'=>$description,':cn'=>$contract_number,':status'=>$status,':start'=>$start_date,':end'=>$end_date,':ea'=>$entreA,':eb'=>$entreB,':project_id'=>$project_id,':value'=>$value,':currency'=>$currency]);
                     $success = 'Contract created.';
                 }
             }
@@ -65,6 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $end_date = $_POST['end_date'] ?: null;
                 $entreA = $_POST['entrepriseA_id'] !== '' ? (int)$_POST['entrepriseA_id'] : null;
                 $entreB = $_POST['entrepriseB_id'] !== '' ? (int)$_POST['entrepriseB_id'] : null;
+                $project_id = $_POST['project_id'] !== '' ? (int)$_POST['project_id'] : null;
                 $value = $_POST['value'] !== '' ? number_format((float)$_POST['value'], 2, '.', '') : null;
                 $currency = trim((string)($_POST['currency'] ?? ''));
 
@@ -81,8 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if (empty($errors)) {
-                    $up = $pdo->prepare('UPDATE contracts SET title=:title, description=:desc, contract_number=:cn, status=:status, start_date=:start, end_date=:end, entrepriseA_id=:ea, entrepriseB_id=:eb, value=:value, currency=:currency, updated_at=NOW() WHERE id = :id');
-                    $up->execute([':title'=>$title,':desc'=>$description,':cn'=>$contract_number,':status'=>$status,':start'=>$start_date,':end'=>$end_date,':ea'=>$entreA,':eb'=>$entreB,':value'=>$value,':currency'=>$currency,':id'=>$id]);
+                    $up = $pdo->prepare('UPDATE contracts SET title=:title, description=:desc, contract_number=:cn, status=:status, start_date=:start, end_date=:end, entrepriseA_id=:ea, entrepriseB_id=:eb, project_id=:project_id, value=:value, currency=:currency, updated_at=NOW() WHERE id = :id');
+                    $up->execute([':title'=>$title,':desc'=>$description,':cn'=>$contract_number,':status'=>$status,':start'=>$start_date,':end'=>$end_date,':ea'=>$entreA,':eb'=>$entreB,':project_id'=>$project_id,':value'=>$value,':currency'=>$currency,':id'=>$id]);
                     $success = 'Contract updated.';
                 }
             }
@@ -126,7 +128,11 @@ if ($q !== '') {
     $where .= ')';
 }
 
-$sql = "SELECT c.*, sA.name AS entrepriseA_name, sB.name AS entrepriseB_name FROM contracts c LEFT JOIN stakeholders sA ON c.entrepriseA_id = sA.id LEFT JOIN stakeholders sB ON c.entrepriseB_id = sB.id $where ORDER BY c.created_at DESC";
+$sql = "SELECT c.*, sA.name AS entrepriseA_name, sB.name AS entrepriseB_name, p.project_name AS project_name FROM contracts c 
+LEFT JOIN stakeholders sA ON c.entrepriseA_id = sA.id 
+LEFT JOIN stakeholders sB ON c.entrepriseB_id = sB.id 
+LEFT JOIN projects p ON c.project_id = p.id 
+$where ORDER BY c.created_at DESC";
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $contracts = $stmt->fetchAll();
@@ -135,6 +141,12 @@ $contracts = $stmt->fetchAll();
 $st = $pdo->prepare('SELECT id, name FROM stakeholders WHERE deleted_at IS NULL ORDER BY name ASC');
 $st->execute();
 $stakeholders = $st->fetchAll();
+
+
+// fetch project for dropdowns
+$st = $pdo->prepare('SELECT id, project_name FROM projects WHERE deleted_at IS NULL ORDER BY project_name ASC');
+$st->execute();
+$projects = $st->fetchAll();
 
 function e($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
@@ -162,7 +174,7 @@ function e($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
     <div class="container">
         <div class="page-header">
             <h1>Contracts</h1>
-            <p class="muted">Create, view, edit and soft-delete contracts.</p>
+            <p class="muted">Create, view, edit and delete contracts.</p>
         </div>
 
         <?php if (!empty($_SESSION['success'])): ?><div class="alert success"><?php echo e($_SESSION['success']); unset($_SESSION['success']); ?></div><?php endif; ?>
@@ -181,11 +193,12 @@ function e($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
             <table class="contract-table stake-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th hidden >ID</th>
                         <th>Contract #</th>
                         <th>Title</th>
-                        <th>Entreprise A</th>
-                        <th>Entreprise B</th>
+                        <th hidden >Entreprise A</th>
+                        <th hidden >Entreprise B</th>
+                        <th>Project</th>
                         <th>Value</th>
                         <th>Dates</th>
                         <th>Status</th>
@@ -203,24 +216,28 @@ function e($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
                         data-description="<?php echo e($c['description']); ?>"
                         data-entrepriseA_id="<?php echo e($c['entrepriseA_id']); ?>"
                         data-entrepriseB_id="<?php echo e($c['entrepriseB_id']); ?>"
+                        data-project_id="<?php echo e($c['project_id']); ?>"
                         data-value="<?php echo e(number_format((float)$c['value'],2,'.','')); ?>"
                         data-currency="<?php echo e($c['currency']); ?>"
                         data-start_date="<?php echo e($c['start_date']); ?>"
                         data-end_date="<?php echo e($c['end_date']); ?>"
                         data-status="<?php echo e($c['status']); ?>"
                     >
-                        <td><?php echo e($c['id']); ?></td>
+                        <td hidden><?php echo e($c['id']); ?></td>
                         <td><?php echo e($c['contract_number']); ?></td>
                         <td><?php echo e($c['title']); ?><div class="muted muted-small"><?php echo e(substr($c['description'] ?? '',0,80)); ?></div></td>
-                        <td><?php echo e($c['entrepriseA_name'] ?? $c['entrepriseA_id']); ?></td>
-                        <td><?php echo e($c['entrepriseB_name'] ?? $c['entrepriseB_id']); ?></td>
+                        <td hidden><?php echo e($c['entrepriseA_name'] ?? $c['entrepriseA_id']); ?></td>
+                        <td hidden><?php echo e($c['entrepriseB_name'] ?? $c['entrepriseB_id']); ?></td>
+                        <td><?php echo e($c['project_name'] ?? $c['project_id']); ?></td>
                         <td><?php echo e(number_format((float)$c['value'],2)); ?> <?php echo e($c['currency']); ?></td>
                         <td><?php echo e($c['start_date']); ?> / <?php echo e($c['end_date']); ?></td>
                         <td><?php echo e($c['status']); ?></td>
                         <td>
                             <div class="actions">
                                 <button class="btn btn-view ghost view-contract" title="View"><i class="fa-solid fa-eye"></i></button>
-                                <button class="btn btn-edit" title="Edit" type="button" onclick="(function(b){var tr=b.closest('.contract-row'); openModal('editContractModal'); fillForm('editContractModal', {id:tr.getAttribute('data-id'), contract_number:tr.getAttribute('data-contract_number'), title:tr.getAttribute('data-title'), description:tr.getAttribute('data-description'), entrepriseA_id:tr.getAttribute('data-entrepriseA_id'), entrepriseB_id:tr.getAttribute('data-entrepriseB_id'), value:tr.getAttribute('data-value'), currency:tr.getAttribute('data-currency'), start_date:tr.getAttribute('data-start_date'), end_date:tr.getAttribute('data-end_date'), status:tr.getAttribute('data-status')});})(this)"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button class="btn btn-edit" title="Edit" type="button" onclick="(function(b){var tr=b.closest('.contract-row'); openModal('editContractModal'); 
+                                fillForm('editContractModal', 
+                                {id:tr.getAttribute('data-id'), contract_number:tr.getAttribute('data-contract_number'), title:tr.getAttribute('data-title'), description:tr.getAttribute('data-description'), entrepriseA_id:tr.getAttribute('data-entrepriseA_id'), entrepriseB_id:tr.getAttribute('data-entrepriseB_id'), project_id:tr.getAttribute('data-project_id'), value:tr.getAttribute('data-value'), currency:tr.getAttribute('data-currency'), start_date:tr.getAttribute('data-start_date'), end_date:tr.getAttribute('data-end_date'), status:tr.getAttribute('data-status')});})(this)"><i class="fa-solid fa-pen-to-square"></i></button>
                                 <button class="btn btn-delete" type="button" onclick="(function(b){var tr=b.closest('.contract-row'); fillForm('deleteContractModal',{id:tr.getAttribute('data-id')}); openModal('deleteContractModal');})(this)"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </td>
@@ -266,6 +283,15 @@ function e($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
                         <option value="<?php echo e($s['id']); ?>"><?php echo e($s['name']); ?></option>
                     <?php endforeach; ?>
                 </select></label>
+
+                
+                <label>Project<select name="project_id">
+                    <option value="">—</option>
+                    <?php foreach($projects as $s): ?>
+                        <option value="<?php echo e($s['id']); ?>"><?php echo e($s['project_name']); ?></option>
+                    <?php endforeach; ?>
+                </select></label>
+
                 <label>Value<input name="value" type="text" required></label>
                 <label>Currency<input name="currency" type="text" required value="USD"></label>
                 <div class="modal-actions">
@@ -312,6 +338,13 @@ function e($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
                         <option value="<?php echo e($s['id']); ?>"><?php echo e($s['name']); ?></option>
                     <?php endforeach; ?>
                 </select></label>
+        <label>Project<select name="project_id">
+                    <option value="">—</option>
+                    <?php foreach($projects as $s): ?>
+                        <option value="<?php echo e($s['id']); ?>"><?php echo e($s['project_name']); ?></option>
+                    <?php endforeach; ?>
+                </select></label>
+
                 <label>Value<input name="value" type="text" required></label>
                 <label>Currency<input name="currency" type="text" required></label>
                 <div class="modal-actions">

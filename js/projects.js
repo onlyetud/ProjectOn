@@ -58,6 +58,8 @@ document.addEventListener("DOMContentLoaded", function () {
       });
       // toggle selected
       lotsRow.style.display = isHidden ? "table-row" : "none";
+      lotsRow.classList.toggle("hidden");
+      //alert(lotsRow.classList);
       var icon = e.currentTarget.querySelector("i");
       if (icon) {
         if (isHidden) {
