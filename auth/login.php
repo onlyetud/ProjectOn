@@ -81,11 +81,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <label for="password">Password</label>
             <input id="password" name="password" type="password" required>
-
-            <button type="submit">Login</button>
+ 
+            <button type="submit" class="login-btn">Login</button>
         </form>
 
-        <p class="muted">Don't have an account? <a href="/projectos/auth/register.php">Register</a></p>
+        <p class="muted">Don't have an account? 
+            <a href="/projectos/auth/register.php">Register</a></p>
     </div>
 </div>
 </body>
