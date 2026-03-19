@@ -162,7 +162,7 @@ if (!empty($stakeIds)) {
                 <input name="q" type="search" placeholder="Search name, organization, type, wilaya" value="<?=htmlspecialchars($q, ENT_QUOTES, 'UTF-8')?>">
             </form>
             <div>
-                <button class="btn" onclick="openModal('addStakeholderModal')">Add Stakeholder</button>
+                <button class="btn btn-add" onclick="openModal('addStakeholderModal')">Add Stakeholder</button>
             </div>
         </div>
 
@@ -188,9 +188,9 @@ if (!empty($stakeIds)) {
                         <td><?=htmlspecialchars($s['phone'], ENT_QUOTES, 'UTF-8')?></td>
                         <td>
                             <div class="actions">
-                                <button class="btn ghost open-view-nts" data-id="<?=htmlspecialchars($s['id'], ENT_QUOTES, 'UTF-8')?>"><i class="fa-solid fa-chevron-down"></i></button>
-                                <button class="btn ghost open-add-nt" data-id="<?=htmlspecialchars($s['id'], ENT_QUOTES, 'UTF-8')?>"><i class="fa-solid fa-plus"></i></button>
-                                <button class="btn ghost open-edit-stakeholder" 
+                                <button class="btn btn-view ghost open-view-nts" data-id="<?=htmlspecialchars($s['id'], ENT_QUOTES, 'UTF-8')?>"><i class="fa-solid fa-chevron-down"></i></button>
+                                <button class="btn btn-add ghost open-add-nt" data-id="<?=htmlspecialchars($s['id'], ENT_QUOTES, 'UTF-8')?>"><i class="fa-solid fa-plus"></i></button>
+                                <button class="btn btn-edit ghost open-edit-stakeholder" 
                                     data-id="<?=htmlspecialchars($s['id'], ENT_QUOTES, 'UTF-8')?>"
                                     data-name="<?=htmlspecialchars($s['name'], ENT_QUOTES, 'UTF-8')?>"
                                     data-organization="<?=htmlspecialchars($s['organization'], ENT_QUOTES, 'UTF-8')?>"
@@ -198,7 +198,7 @@ if (!empty($stakeIds)) {
                                     data-wilaya="<?=htmlspecialchars($s['wilaya'], ENT_QUOTES, 'UTF-8')?>"
                                     data-phone="<?=htmlspecialchars($s['phone'], ENT_QUOTES, 'UTF-8')?>"
                                 ><i class="fa-solid fa-pen-to-square"></i></button>
-                                <button class="btn ghost open-delete-stakeholder" data-id="<?=htmlspecialchars($s['id'], ENT_QUOTES, 'UTF-8')?>"><i class="fa-solid fa-trash"></i></button>
+                                <button class="btn btn-delete ghost open-delete-stakeholder" data-id="<?=htmlspecialchars($s['id'], ENT_QUOTES, 'UTF-8')?>"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </td>
                     </tr>
@@ -214,15 +214,15 @@ if (!empty($stakeIds)) {
                                             <td><?=htmlspecialchars($n['nt_name'], ENT_QUOTES, 'UTF-8')?></td>
                                             <td><?=htmlspecialchars($n['description'], ENT_QUOTES, 'UTF-8')?></td>
                                             <td>
-                                                <div class="actions">
-                                                    <button class="btn ghost open-edit-nt" 
+                                                    <div class="actions">
+                                                    <button class="btn btn-edit ghost open-edit-nt" 
                                                         data-id="<?=htmlspecialchars($n['id'], ENT_QUOTES, 'UTF-8')?>"
                                                         data-stakeholder_id="<?=htmlspecialchars($n['stakeholder_id'], ENT_QUOTES, 'UTF-8')?>"
                                                         data-nt_code="<?=htmlspecialchars($n['nt_code'], ENT_QUOTES, 'UTF-8')?>"
                                                         data-nt_name="<?=htmlspecialchars($n['nt_name'], ENT_QUOTES, 'UTF-8')?>"
                                                         data-description="<?=htmlspecialchars($n['description'], ENT_QUOTES, 'UTF-8')?>"
                                                     ><i class="fa-solid fa-pen-to-square"></i></button>
-                                                    <button class="btn ghost open-delete-nt" data-id="<?=htmlspecialchars($n['id'], ENT_QUOTES, 'UTF-8')?>"><i class="fa-solid fa-trash"></i></button>
+                                                    <button class="btn btn-delete ghost open-delete-nt" data-id="<?=htmlspecialchars($n['id'], ENT_QUOTES, 'UTF-8')?>"><i class="fa-solid fa-trash"></i></button>
                                                 </div>
                                             </td>
                                         </tr>

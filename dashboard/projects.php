@@ -196,7 +196,7 @@ $stakeholders = $stmt->fetchAll();
                 <input name="q" type="search" placeholder="Search project name, wilaya, commune, client, realisateur, status" value="<?=htmlspecialchars($q, ENT_QUOTES, 'UTF-8')?>">
             </form>
             <div>
-                <button class="btn" type="button" onclick="openModal('addProjectModal')"><i class="fa-solid fa-plus"></i> Add Project</button>
+                <button class="btn btn-add" type="button" onclick="openModal('addProjectModal')"><i class="fa-solid fa-plus"></i> Add Project</button>
             </div>
         </div>
 
@@ -248,18 +248,18 @@ $stakeholders = $stmt->fetchAll();
                         <td><?=htmlspecialchars($p['end_date'] ?? '', ENT_QUOTES, 'UTF-8')?></td>
                         <td>
                             <div class="actions">
-                                <button class="btn ghost open-project-details" title="Details"><i class="fa-solid fa-info-circle"></i></button>
-                                <button class="btn ghost toggle-lots" title="Toggle lots" data-project-id="<?=htmlspecialchars($p['id'], ENT_QUOTES, 'UTF-8')?>"><i class="fa-solid fa-chevron-down"></i></button>
-                                <button class="btn ghost open-add-lot" title="Add Lot" data-project-id="<?=htmlspecialchars($p['id'], ENT_QUOTES, 'UTF-8')?>"><i class="fa-solid fa-plus"></i></button>
-                                <button class="btn ghost open-edit-project" title="Edit"><i class="fa-solid fa-pen"></i></button>
-                                <button class="btn ghost open-delete-project" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                                <button class="btn btn-view ghost open-project-details" title="Details"><i class="fa-solid fa-info-circle"></i></button>
+                                <button class="btn btn-view ghost toggle-lots" title="Toggle lots" data-project-id="<?=htmlspecialchars($p['id'], ENT_QUOTES, 'UTF-8')?>"><i class="fa-solid fa-chevron-down"></i></button>
+                                <button class="btn btn-add ghost open-add-lot" title="Add Lot" data-project-id="<?=htmlspecialchars($p['id'], ENT_QUOTES, 'UTF-8')?>"><i class="fa-solid fa-plus"></i></button>
+                                <button class="btn btn-edit ghost open-edit-project" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn btn-delete ghost open-delete-project" title="Delete"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </td>
                     </tr>
-                    <tr class="lots-row" data-parent="<?=htmlspecialchars($p['id'], ENT_QUOTES, 'UTF-8')?>" style="display:none">
+                    <tr class="lots-row hidden" data-parent="<?=htmlspecialchars($p['id'], ENT_QUOTES, 'UTF-8')?>">
                         <td colspan="9">
                             <div class="nt-sub">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                                <div class="flex-between">
                                     <strong>Project Lots</strong>
                                 </div>
                                 <table class="nt-table">

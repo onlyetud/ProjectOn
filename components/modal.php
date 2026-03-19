@@ -32,6 +32,10 @@
     </div>
 </div>
 
+<!-- Toast container for pop-up alerts -->
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+
         <!-- Lot Modals -->
         <div class="modal" id="addLotModal" aria-hidden="true">
             <div class="modal-overlay" data-close="true"></div>

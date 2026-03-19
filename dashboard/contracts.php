@@ -173,7 +173,7 @@ function e($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
                 <input name="q" type="search" placeholder="Search title, number, status or entreprise id" value="<?php echo e($q); ?>">
             </form>
             <div>
-                <button class="btn" type="button" onclick="openModal('addContractModal')"><i class="fa-solid fa-plus"></i> Add New Contract</button>
+                <button class="btn btn-add" type="button" onclick="openModal('addContractModal')"><i class="fa-solid fa-plus"></i> Add New Contract</button>
             </div>
         </div>
 
@@ -211,7 +211,7 @@ function e($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
                     >
                         <td><?php echo e($c['id']); ?></td>
                         <td><?php echo e($c['contract_number']); ?></td>
-                        <td><?php echo e($c['title']); ?><div class="muted" style="font-size:12px"><?php echo e(substr($c['description'] ?? '',0,80)); ?></div></td>
+                        <td><?php echo e($c['title']); ?><div class="muted muted-small"><?php echo e(substr($c['description'] ?? '',0,80)); ?></div></td>
                         <td><?php echo e($c['entrepriseA_name'] ?? $c['entrepriseA_id']); ?></td>
                         <td><?php echo e($c['entrepriseB_name'] ?? $c['entrepriseB_id']); ?></td>
                         <td><?php echo e(number_format((float)$c['value'],2)); ?> <?php echo e($c['currency']); ?></td>
@@ -219,9 +219,9 @@ function e($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
                         <td><?php echo e($c['status']); ?></td>
                         <td>
                             <div class="actions">
-                                <button class="btn ghost view-contract" title="View"><i class="fa-solid fa-eye"></i></button>
-                                <button class="btn" style="background:#2563eb;" title="Edit" type="button" onclick="(function(b){var tr=b.closest('.contract-row'); openModal('editContractModal'); fillForm('editContractModal', {id:tr.getAttribute('data-id'), contract_number:tr.getAttribute('data-contract_number'), title:tr.getAttribute('data-title'), description:tr.getAttribute('data-description'), entrepriseA_id:tr.getAttribute('data-entrepriseA_id'), entrepriseB_id:tr.getAttribute('data-entrepriseB_id'), value:tr.getAttribute('data-value'), currency:tr.getAttribute('data-currency'), start_date:tr.getAttribute('data-start_date'), end_date:tr.getAttribute('data-end_date'), status:tr.getAttribute('data-status')});})(this)"><i class="fa-solid fa-pen-to-square"></i></button>
-                                <button class="btn" style="background:#ef4444;" type="button" onclick="(function(b){var tr=b.closest('.contract-row'); fillForm('deleteContractModal',{id:tr.getAttribute('data-id')}); openModal('deleteContractModal');})(this)"><i class="fa-solid fa-trash"></i></button>
+                                <button class="btn btn-view ghost view-contract" title="View"><i class="fa-solid fa-eye"></i></button>
+                                <button class="btn btn-edit" title="Edit" type="button" onclick="(function(b){var tr=b.closest('.contract-row'); openModal('editContractModal'); fillForm('editContractModal', {id:tr.getAttribute('data-id'), contract_number:tr.getAttribute('data-contract_number'), title:tr.getAttribute('data-title'), description:tr.getAttribute('data-description'), entrepriseA_id:tr.getAttribute('data-entrepriseA_id'), entrepriseB_id:tr.getAttribute('data-entrepriseB_id'), value:tr.getAttribute('data-value'), currency:tr.getAttribute('data-currency'), start_date:tr.getAttribute('data-start_date'), end_date:tr.getAttribute('data-end_date'), status:tr.getAttribute('data-status')});})(this)"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button class="btn btn-delete" type="button" onclick="(function(b){var tr=b.closest('.contract-row'); fillForm('deleteContractModal',{id:tr.getAttribute('data-id')}); openModal('deleteContractModal');})(this)"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </td>
                     </tr>
