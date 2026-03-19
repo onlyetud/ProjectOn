@@ -188,7 +188,7 @@ $stakeholders = $stmt->fetchAll();
     <div class="container">
         <div class="page-header">
             <h1>Projects</h1>
-            <p class="muted">Create, edit, and soft-delete projects.</p>
+            <p class="muted">Create, edit, and delete projects.</p>
         </div>
 
         <div class="controls">
