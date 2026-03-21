@@ -398,6 +398,25 @@ body {
   color: var(--muted);
   font-size: 12px;
 }
+/* Modal width: make modal wider to fit articles table */
+.modal-window { max-width: 1100px; width: 95%; }
+
+/* Articles table inside modals (compact: name, desc, qte, tva, ttc) */
+.table-responsive { overflow:auto; }
+.articles-table { width:100%; border-collapse: collapse; margin-top:8px; }
+.articles-table thead th { background: #f1f5f9; color: #0f172a; font-weight:700; padding:10px; position:sticky; top:0; z-index:2; }
+.articles-table th, .articles-table td { padding:8px 10px; border-bottom:1px solid #eef2f7; vertical-align:middle; }
+.articles-table tbody tr:nth-child(odd) { background: #fff; }
+.articles-table tbody tr:nth-child(even) { background: #fbfdff; }
+.articles-table tbody tr:hover { background: #f8fafc; }
+.articles-table input[type="number"], .articles-table input[type="text"] { width:100%; padding:6px; border-radius:6px; border:1px solid #e6eef6; }
+.articles-table td { white-space:nowrap; }
+.articles-table .remove-article { background:transparent; border:0; cursor:pointer; }
+
+@media(max-width:720px){
+  .articles-table thead th { font-size:12px; }
+  .articles-table td input { font-size:13px; }
+}
 /* Modal base styles (used across app) */
 .modal {
   display: none;

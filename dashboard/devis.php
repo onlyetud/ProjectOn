@@ -59,22 +59,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $ins->execute([':dn'=>$devis_number,':contract_id'=>$contract_id,':title'=>$title,':desc'=>$description,':status'=>$status,':issue'=>$issue_date,':expiry'=>$expiry_date,':tht'=>$total_ht,':ttva'=>$total_tva,':tttc'=>$total_ttc,':notes'=>$notes]);
                     $devis_id = (int)$pdo->lastInsertId();
 
-                    // insert articles
-                    $names = $_POST['article_name'] ?? [];
-                    $descs = $_POST['article_description'] ?? [];
-                    $qtys = $_POST['quantity'] ?? [];
-                    $unit_prices = $_POST['unit_price'] ?? [];
-                    $tva_rates = $_POST['tva_rate'] ?? [];
-                    $a_tht = $_POST['article_total_ht'] ?? [];
-                    $a_ttva = $_POST['article_total_tva'] ?? [];
-                    $a_tttc = $_POST['article_total_ttc'] ?? [];
-
+                    // insert articles: support nested `articles[...]` or legacy flat arrays
+                    $articles = $_POST['articles'] ?? null;
                     $ain = $pdo->prepare('INSERT INTO devis_articles (devis_id, article_name, description, quantity, unit_price, tva_rate, total_ht, total_tva, total_ttc, created_at) VALUES (:devis_id,:name,:desc,:qty,:unit,:tva,:tht,:ttva,:tttc,NOW())');
-                    for ($i=0;$i<count($names);$i++) {
-                        $n = trim((string)$names[$i]);
-                        if ($n === '') continue;
-                        $ain->execute([':devis_id'=>$devis_id,':name'=>$n,':desc'=>trim((string)$descs[$i]),':qty'=>number_format((float)$qtys[$i],2,'.',''),':unit'=>number_format((float)$unit_prices[$i],2,'.',''),':tva'=>number_format((float)$tva_rates[$i],2,'.',''),':tht'=>number_format((float)($a_tht[$i] ?? 0),2,'.',''),':ttva'=>number_format((float)($a_ttva[$i] ?? 0),2,'.',''),':tttc'=>number_format((float)($a_tttc[$i] ?? 0),2,'.','')]);
+                    if (is_array($articles)) {
+                        foreach ($articles as $a) {
+                            $name = trim((string)($a['article_name'] ?? ''));
+                            if ($name === '') continue;
+                            $qty = isset($a['quantity']) ? (float)$a['quantity'] : 0.0;
+                            $unit = isset($a['unit_price']) ? (float)$a['unit_price'] : 0.0;
+                            $tva = isset($a['tva_rate']) ? (float)$a['tva_rate'] : 0.0;
+                            $ttc = isset($a['total_ttc']) ? (float)$a['total_ttc'] : 0.0;
+                            if ($ttc > 0.0) {
+                                $tht = $tva >= 0 ? $ttc / (1 + ($tva/100)) : $ttc;
+                                $ttva = $ttc - $tht;
+                            } else {
+                                $tht = $qty * $unit;
+                                $ttva = $tht * ($tva/100);
+                                $ttc = $tht + $ttva;
+                            }
+                            $ain->execute([':devis_id'=>$devis_id,':name'=>$name,':desc'=>trim((string)($a['description'] ?? '')),':qty'=>number_format($qty,2,'.',''),':unit'=>number_format($unit,2,'.',''),':tva'=>number_format($tva,2,'.',''),':tht'=>number_format($tht,2,'.',''),':ttva'=>number_format($ttva,2,'.',''),':tttc'=>number_format($ttc,2,'.','')]);
+                        }
+                    } else {
+                        $names = $_POST['article_name'] ?? [];
+                        $descs = $_POST['article_description'] ?? [];
+                        $qtys = $_POST['quantity'] ?? [];
+                        $unit_prices = $_POST['unit_price'] ?? [];
+                        $tva_rates = $_POST['tva_rate'] ?? [];
+                        $a_tht = $_POST['article_total_ht'] ?? [];
+                        $a_ttva = $_POST['article_total_tva'] ?? [];
+                        $a_tttc = $_POST['article_total_ttc'] ?? [];
+                        for ($i=0;$i<count($names);$i++) {
+                            $n = trim((string)$names[$i]);
+                            if ($n === '') continue;
+                            $ain->execute([':devis_id'=>$devis_id,':name'=>$n,':desc'=>trim((string)$descs[$i]),':qty'=>number_format((float)$qtys[$i],2,'.',''),':unit'=>number_format((float)$unit_prices[$i],2,'.',''),':tva'=>number_format((float)$tva_rates[$i],2,'.',''),':tht'=>number_format((float)($a_tht[$i] ?? 0),2,'.',''),':ttva'=>number_format((float)($a_ttva[$i] ?? 0),2,'.',''),':tttc'=>number_format((float)($a_tttc[$i] ?? 0),2,'.','')]);
+                        }
                     }
+
+                    // recompute totals from inserted articles and update devis row
+                    try {
+                        $stot = $pdo->prepare('SELECT COALESCE(SUM(total_ht),0) AS stht, COALESCE(SUM(total_tva),0) AS sttva, COALESCE(SUM(total_ttc),0) AS stttc FROM devis_articles WHERE devis_id = :id');
+                        $stot->execute([':id'=>$devis_id]);
+                        $s = $stot->fetch();
+                        $upd = $pdo->prepare('UPDATE devis SET total_ht = :tht, total_tva = :ttva, total_ttc = :tttc WHERE id = :id');
+                        $upd->execute([':tht'=>number_format((float)($s['stht'] ?? 0),2,'.',''),':ttva'=>number_format((float)($s['sttva'] ?? 0),2,'.',''),':tttc'=>number_format((float)($s['stttc'] ?? 0),2,'.',''),':id'=>$devis_id]);
+                    } catch (Exception $e) { /* ignore */ }
 
                     $success = 'Devis created.';
                 }
@@ -109,25 +138,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $up = $pdo->prepare('UPDATE devis SET devis_number=:dn, contract_id=:contract_id, title=:title, description=:desc, status=:status, issue_date=:issue, expiry_date=:expiry, total_ht=:tht, total_tva=:ttva, total_ttc=:tttc, notes=:notes, updated_at=NOW() WHERE id = :id');
                     $up->execute([':dn'=>$devis_number,':contract_id'=>$contract_id,':title'=>$title,':desc'=>$description,':status'=>$status,':issue'=>$issue_date,':expiry'=>$expiry_date,':tht'=>$total_ht,':ttva'=>$total_tva,':tttc'=>$total_ttc,':notes'=>$notes,':id'=>$id]);
 
-                    // delete existing articles and reinsert
+                    // delete existing articles and reinsert (supports nested `articles`)
                     $d = $pdo->prepare('DELETE FROM devis_articles WHERE devis_id = :id');
                     $d->execute([':id'=>$id]);
 
-                    $names = $_POST['article_name'] ?? [];
-                    $descs = $_POST['article_description'] ?? [];
-                    $qtys = $_POST['quantity'] ?? [];
-                    $unit_prices = $_POST['unit_price'] ?? [];
-                    $tva_rates = $_POST['tva_rate'] ?? [];
-                    $a_tht = $_POST['article_total_ht'] ?? [];
-                    $a_ttva = $_POST['article_total_tva'] ?? [];
-                    $a_tttc = $_POST['article_total_ttc'] ?? [];
-
+                    $articles = $_POST['articles'] ?? null;
                     $ain = $pdo->prepare('INSERT INTO devis_articles (devis_id, article_name, description, quantity, unit_price, tva_rate, total_ht, total_tva, total_ttc, created_at) VALUES (:devis_id,:name,:desc,:qty,:unit,:tva,:tht,:ttva,:tttc,NOW())');
-                    for ($i=0;$i<count($names);$i++) {
-                        $n = trim((string)$names[$i]);
-                        if ($n === '') continue;
-                        $ain->execute([':devis_id'=>$id,':name'=>$n,':desc'=>trim((string)$descs[$i]),':qty'=>number_format((float)$qtys[$i],2,'.',''),':unit'=>number_format((float)$unit_prices[$i],2,'.',''),':tva'=>number_format((float)$tva_rates[$i],2,'.',''),':tht'=>number_format((float)($a_tht[$i] ?? 0),2,'.',''),':ttva'=>number_format((float)($a_ttva[$i] ?? 0),2,'.',''),':tttc'=>number_format((float)($a_tttc[$i] ?? 0),2,'.','')]);
+                    if (is_array($articles)) {
+                        foreach ($articles as $a) {
+                            $name = trim((string)($a['article_name'] ?? ''));
+                            if ($name === '') continue;
+                            $qty = isset($a['quantity']) ? (float)$a['quantity'] : 0.0;
+                            $unit = isset($a['unit_price']) ? (float)$a['unit_price'] : 0.0;
+                            $tva = isset($a['tva_rate']) ? (float)$a['tva_rate'] : 0.0;
+                            $ttc = isset($a['total_ttc']) ? (float)$a['total_ttc'] : 0.0;
+                            if ($ttc > 0.0) {
+                                $tht = $tva >= 0 ? $ttc / (1 + ($tva/100)) : $ttc;
+                                $ttva = $ttc - $tht;
+                            } else {
+                                $tht = $qty * $unit;
+                                $ttva = $tht * ($tva/100);
+                                $ttc = $tht + $ttva;
+                            }
+                            $ain->execute([':devis_id'=>$id,':name'=>$name,':desc'=>trim((string)($a['description'] ?? '')),':qty'=>number_format($qty,2,'.',''),':unit'=>number_format($unit,2,'.',''),':tva'=>number_format($tva,2,'.',''),':tht'=>number_format($tht,2,'.',''),':ttva'=>number_format($ttva,2,'.',''),':tttc'=>number_format($ttc,2,'.','')]);
+                        }
+                    } else {
+                        $names = $_POST['article_name'] ?? [];
+                        $descs = $_POST['article_description'] ?? [];
+                        $qtys = $_POST['quantity'] ?? [];
+                        $unit_prices = $_POST['unit_price'] ?? [];
+                        $tva_rates = $_POST['tva_rate'] ?? [];
+                        $a_tht = $_POST['article_total_ht'] ?? [];
+                        $a_ttva = $_POST['article_total_tva'] ?? [];
+                        $a_tttc = $_POST['article_total_ttc'] ?? [];
+                        for ($i=0;$i<count($names);$i++) {
+                            $n = trim((string)$names[$i]);
+                            if ($n === '') continue;
+                            $ain->execute([':devis_id'=>$id,':name'=>$n,':desc'=>trim((string)$descs[$i]),':qty'=>number_format((float)$qtys[$i],2,'.',''),':unit'=>number_format((float)$unit_prices[$i],2,'.',''),':tva'=>number_format((float)$tva_rates[$i],2,'.',''),':tht'=>number_format((float)($a_tht[$i] ?? 0),2,'.',''),':ttva'=>number_format((float)($a_ttva[$i] ?? 0),2,'.',''),':tttc'=>number_format((float)($a_tttc[$i] ?? 0),2,'.','')]);
+                        }
                     }
+
+                    // recompute totals from articles
+                    try {
+                        $stot = $pdo->prepare('SELECT COALESCE(SUM(total_ht),0) AS stht, COALESCE(SUM(total_tva),0) AS sttva, COALESCE(SUM(total_ttc),0) AS stttc FROM devis_articles WHERE devis_id = :id');
+                        $stot->execute([':id'=>$id]);
+                        $s = $stot->fetch();
+                        $upd = $pdo->prepare('UPDATE devis SET total_ht = :tht, total_tva = :ttva, total_ttc = :tttc WHERE id = :id');
+                        $upd->execute([':tht'=>number_format((float)($s['stht'] ?? 0),2,'.',''),':ttva'=>number_format((float)($s['sttva'] ?? 0),2,'.',''),':tttc'=>number_format((float)($s['stttc'] ?? 0),2,'.',''),':id'=>$id]);
+                    } catch (Exception $e) { /* ignore */ }
 
                     $success = 'Devis updated.';
                 }
@@ -198,6 +256,34 @@ $contracts = $st->fetchAll();
     <link rel="stylesheet" href="/projectos/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
+    /* Articles & table styles (compact invoice-like) */
+    .table-responsive{overflow-x:auto;width:100%}
+    table{width:100%;border-collapse:collapse;text-align:left}
+    th{padding:0.9rem 0.5rem;font-weight:600;border-bottom:2px solid #f1f5f9;color:#1e293b}
+    td{padding:0.9rem 0.5rem;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+    tr:hover{background:#f8fafc}
+
+    input{width:100%;padding:0.45rem;border:0;border-bottom:1px solid #e6eef6;outline:none;font-family:inherit}
+    input:focus{border-bottom-color:#2563eb}
+    .input-box{border:1px solid #e6eef6;border-radius:6px;text-align:center;background:#fff}
+    .text-right{text-align:right}.text-center{text-align:center}
+    .item-description{font-size:0.9rem;color:#64748b}
+
+    .btn-remove{background:none;border:0;color:#cbd5e1;cursor:pointer;padding:0.4rem;transition:color .15s}
+    tr:hover .btn-remove{color:#ef4444}
+
+    .btn-add{display:inline-flex;align-items:center;background:#f8fafc;border:1px solid #e6eef6;padding:0.45rem 0.85rem;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;margin-top:0.75rem}
+    .btn{padding:0.5rem 0.9rem;border-radius:8px}
+
+    .summary-container{display:flex;justify-content:space-between;align-items:flex-start;margin-top:1rem}
+    .totals-box{width:260px}
+    .total-row{display:flex;justify-content:space-between;padding:0.4rem 0;color:#64748b}
+    .total-row.grand-total{border-top:1px solid #e6eef6;margin-top:0.5rem;padding-top:0.75rem;font-size:1.1rem;font-weight:700;color:#1e293b}
+
+    /* Make modal wider for article tables */
+    .modal-window{max-width:1100px}
+
+    /* small tweaks for existing table */
     .devis-table th, .devis-table td{padding:10px 12px;border-bottom:1px solid #eef2f7}
     .devis-table thead th{background:transparent;text-align:left}
     .actions .btn{padding:6px 8px}
@@ -318,13 +404,33 @@ $contracts = $st->fetchAll();
                 <label>Expiry Date<input type="date" name="expiry_date"></label>
 
                 <h4>Articles</h4>
-                <div id="articlesContainer"></div>
-                <p><button type="button" class="btn" id="addArticleBtn">Add Article</button></p>
-
-                <div class="article-totals">
-                    <label>Total HT<input name="total_ht" readonly value="0.00"></label>
-                    <label>Total TVA<input name="total_tva" readonly value="0.00"></label>
-                    <label>Total TTC<input name="total_ttc" readonly value="0.00"></label>
+                <div class="articles-table-wrap">
+                    <button type="button" class="btn" id="addArticleBtn">Add Article</button>
+                    <div class="table-responsive">
+                        <table class="articles-table" id="articlesTable">
+                            <thead>
+                                <tr>
+                                    <th>Article Name</th>
+                                    <th>Description</th>
+                                    <th style="width:90px;text-align:right">Qte</th>
+                                    <th style="width:110px;text-align:right">Unit Price</th>
+                                    <th style="width:90px;text-align:right">TVA (%)</th>
+                                    <th style="width:140px;text-align:right">TTC</th>
+                                    <th style="width:60px">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- rows appended by JS -->
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="5" style="text-align:right;font-weight:700">Sub Total (TTC)</td>
+                                    <td style="text-align:right;font-weight:700"><span id="articlesSubtotal">0.00</span><input type="hidden" name="total_ttc" value="0.00"></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
 
                 <label>Notes<textarea name="notes"></textarea></label>
@@ -371,13 +477,33 @@ $contracts = $st->fetchAll();
                 <label>Expiry Date<input type="date" name="expiry_date"></label>
 
                 <h4>Articles</h4>
-                <div id="editArticlesContainer"></div>
-                <p><button type="button" class="btn" id="editAddArticleBtn">Add Article</button></p>
-
-                <div class="article-totals">
-                    <label>Total HT<input name="total_ht" readonly value="0.00"></label>
-                    <label>Total TVA<input name="total_tva" readonly value="0.00"></label>
-                    <label>Total TTC<input name="total_ttc" readonly value="0.00"></label>
+                <div class="articles-table-wrap">
+                    <button type="button" class="btn" id="editAddArticleBtn">Add Article</button>
+                    <div class="table-responsive">
+                        <table class="articles-table" id="editArticlesTable">
+                            <thead>
+                                <tr>
+                                    <th>Article Name</th>
+                                    <th>Description</th>
+                                    <th style="width:90px;text-align:right">Qte</th>
+                                    <th style="width:110px;text-align:right">Unit Price</th>
+                                    <th style="width:90px;text-align:right">TVA (%)</th>
+                                    <th style="width:140px;text-align:right">TTC</th>
+                                    <th style="width:60px">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- rows appended by JS -->
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="5" style="text-align:right;font-weight:700">Sub Total (TTC)</td>
+                                    <td style="text-align:right;font-weight:700"><span id="editArticlesSubtotal">0.00</span><input type="hidden" name="total_ttc" value="0.00"></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
 
                 <label>Notes<textarea name="notes"></textarea></label>
