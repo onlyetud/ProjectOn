@@ -55,13 +55,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if (empty($errors)) {
-                    $ins = $pdo->prepare('INSERT INTO devis (devis_number, contract_id, title, description, status, issue_date, expiry_date, total_ht, total_tva, total_ttc, notes, created_at, updated_at) VALUES (:dn,:contract_id,:title,:desc,:status,:issue,:expiry,:tht,:ttva,:tttc,:notes,NOW(),NOW())');
-                    $ins->execute([':dn'=>$devis_number,':contract_id'=>$contract_id,':title'=>$title,':desc'=>$description,':status'=>$status,':issue'=>$issue_date,':expiry'=>$expiry_date,':tht'=>$total_ht,':ttva'=>$total_tva,':tttc'=>$total_ttc,':notes'=>$notes]);
+                    $stakeholder_id = isset($_POST['stakeholder_id']) && $_POST['stakeholder_id'] !== '' ? (int)$_POST['stakeholder_id'] : null;
+                    $ins = $pdo->prepare('INSERT INTO devis (devis_number, contract_id, stakeholder_id, title, description, status, issue_date, expiry_date, total_ht, total_tva, total_ttc, notes, created_at, updated_at) VALUES (:dn,:contract_id,:stakeholder_id,:title,:desc,:status,:issue,:expiry,:tht,:ttva,:tttc,:notes,NOW(),NOW())');
+                    $ins->execute([':dn'=>$devis_number,':contract_id'=>$contract_id,':stakeholder_id'=>$stakeholder_id,':title'=>$title,':desc'=>$description,':status'=>$status,':issue'=>$issue_date,':expiry'=>$expiry_date,':tht'=>$total_ht,':ttva'=>$total_tva,':tttc'=>$total_ttc,':notes'=>$notes]);
                     $devis_id = (int)$pdo->lastInsertId();
 
                     // insert articles: support nested `articles[...]` or legacy flat arrays
                     $articles = $_POST['articles'] ?? null;
-                    $ain = $pdo->prepare('INSERT INTO devis_articles (devis_id, article_name, description, quantity, unit_price, tva_rate, total_ht, total_tva, total_ttc, created_at) VALUES (:devis_id,:name,:desc,:qty,:unit,:tva,:tht,:ttva,:tttc,NOW())');
+                    $ain = $pdo->prepare('INSERT INTO devis_articles (devis_id, article_name, description, um, quantity, unit_price, tva_rate, total_ht, total_tva, total_ttc, created_at) VALUES (:devis_id,:name,:desc,:um,:qty,:unit,:tva,:tht,:ttva,:tttc,NOW())');
                     if (is_array($articles)) {
                         foreach ($articles as $a) {
                             $name = trim((string)($a['article_name'] ?? ''));
@@ -70,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $unit = isset($a['unit_price']) ? (float)$a['unit_price'] : 0.0;
                             $tva = isset($a['tva_rate']) ? (float)$a['tva_rate'] : 0.0;
                             $ttc = isset($a['total_ttc']) ? (float)$a['total_ttc'] : 0.0;
+                            $um = trim((string)($a['um'] ?? ''));
                             if ($ttc > 0.0) {
                                 $tht = $tva >= 0 ? $ttc / (1 + ($tva/100)) : $ttc;
                                 $ttva = $ttc - $tht;
@@ -78,11 +80,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $ttva = $tht * ($tva/100);
                                 $ttc = $tht + $ttva;
                             }
-                            $ain->execute([':devis_id'=>$devis_id,':name'=>$name,':desc'=>trim((string)($a['description'] ?? '')),':qty'=>number_format($qty,2,'.',''),':unit'=>number_format($unit,2,'.',''),':tva'=>number_format($tva,2,'.',''),':tht'=>number_format($tht,2,'.',''),':ttva'=>number_format($ttva,2,'.',''),':tttc'=>number_format($ttc,2,'.','')]);
+                            $ain->execute([':devis_id'=>$devis_id,':name'=>$name,':desc'=>trim((string)($a['description'] ?? '')),':um'=>$um,':qty'=>number_format($qty,2,'.',''),':unit'=>number_format($unit,2,'.',''),':tva'=>number_format($tva,2,'.',''),':tht'=>number_format($tht,2,'.',''),':ttva'=>number_format($ttva,2,'.',''),':tttc'=>number_format($ttc,2,'.','')]);
                         }
                     } else {
                         $names = $_POST['article_name'] ?? [];
                         $descs = $_POST['article_description'] ?? [];
+                        $ums = $_POST['article_um'] ?? [];
                         $qtys = $_POST['quantity'] ?? [];
                         $unit_prices = $_POST['unit_price'] ?? [];
                         $tva_rates = $_POST['tva_rate'] ?? [];
@@ -92,7 +95,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         for ($i=0;$i<count($names);$i++) {
                             $n = trim((string)$names[$i]);
                             if ($n === '') continue;
-                            $ain->execute([':devis_id'=>$devis_id,':name'=>$n,':desc'=>trim((string)$descs[$i]),':qty'=>number_format((float)$qtys[$i],2,'.',''),':unit'=>number_format((float)$unit_prices[$i],2,'.',''),':tva'=>number_format((float)$tva_rates[$i],2,'.',''),':tht'=>number_format((float)($a_tht[$i] ?? 0),2,'.',''),':ttva'=>number_format((float)($a_ttva[$i] ?? 0),2,'.',''),':tttc'=>number_format((float)($a_tttc[$i] ?? 0),2,'.','')]);
+                            $um = trim((string)($ums[$i] ?? ''));
+                            $ain->execute([':devis_id'=>$devis_id,':name'=>$n,':desc'=>trim((string)$descs[$i]),':um'=>$um,':qty'=>number_format((float)$qtys[$i],2,'.',''),':unit'=>number_format((float)$unit_prices[$i],2,'.',''),':tva'=>number_format((float)$tva_rates[$i],2,'.',''),':tht'=>number_format((float)($a_tht[$i] ?? 0),2,'.',''),':ttva'=>number_format((float)($a_ttva[$i] ?? 0),2,'.',''),':tttc'=>number_format((float)($a_tttc[$i] ?? 0),2,'.','')]);
                         }
                     }
 
@@ -135,15 +139,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if (empty($errors)) {
-                    $up = $pdo->prepare('UPDATE devis SET devis_number=:dn, contract_id=:contract_id, title=:title, description=:desc, status=:status, issue_date=:issue, expiry_date=:expiry, total_ht=:tht, total_tva=:ttva, total_ttc=:tttc, notes=:notes, updated_at=NOW() WHERE id = :id');
-                    $up->execute([':dn'=>$devis_number,':contract_id'=>$contract_id,':title'=>$title,':desc'=>$description,':status'=>$status,':issue'=>$issue_date,':expiry'=>$expiry_date,':tht'=>$total_ht,':ttva'=>$total_tva,':tttc'=>$total_ttc,':notes'=>$notes,':id'=>$id]);
+                    $stakeholder_id = isset($_POST['stakeholder_id']) && $_POST['stakeholder_id'] !== '' ? (int)$_POST['stakeholder_id'] : null;
+                    $up = $pdo->prepare('UPDATE devis SET devis_number=:dn, contract_id=:contract_id, stakeholder_id=:stakeholder_id, title=:title, description=:desc, status=:status, issue_date=:issue, expiry_date=:expiry, total_ht=:tht, total_tva=:ttva, total_ttc=:tttc, notes=:notes, updated_at=NOW() WHERE id = :id');
+                    $up->execute([':dn'=>$devis_number,':contract_id'=>$contract_id,':stakeholder_id'=>$stakeholder_id,':title'=>$title,':desc'=>$description,':status'=>$status,':issue'=>$issue_date,':expiry'=>$expiry_date,':tht'=>$total_ht,':ttva'=>$total_tva,':tttc'=>$total_ttc,':notes'=>$notes,':id'=>$id]);
 
                     // delete existing articles and reinsert (supports nested `articles`)
                     $d = $pdo->prepare('DELETE FROM devis_articles WHERE devis_id = :id');
                     $d->execute([':id'=>$id]);
 
                     $articles = $_POST['articles'] ?? null;
-                    $ain = $pdo->prepare('INSERT INTO devis_articles (devis_id, article_name, description, quantity, unit_price, tva_rate, total_ht, total_tva, total_ttc, created_at) VALUES (:devis_id,:name,:desc,:qty,:unit,:tva,:tht,:ttva,:tttc,NOW())');
+                    $ain = $pdo->prepare('INSERT INTO devis_articles (devis_id, article_name, description, um, quantity, unit_price, tva_rate, total_ht, total_tva, total_ttc, created_at) VALUES (:devis_id,:name,:desc,:um,:qty,:unit,:tva,:tht,:ttva,:tttc,NOW())');
                     if (is_array($articles)) {
                         foreach ($articles as $a) {
                             $name = trim((string)($a['article_name'] ?? ''));
@@ -152,6 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $unit = isset($a['unit_price']) ? (float)$a['unit_price'] : 0.0;
                             $tva = isset($a['tva_rate']) ? (float)$a['tva_rate'] : 0.0;
                             $ttc = isset($a['total_ttc']) ? (float)$a['total_ttc'] : 0.0;
+                            $um = trim((string)($a['um'] ?? ''));
                             if ($ttc > 0.0) {
                                 $tht = $tva >= 0 ? $ttc / (1 + ($tva/100)) : $ttc;
                                 $ttva = $ttc - $tht;
@@ -160,11 +166,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $ttva = $tht * ($tva/100);
                                 $ttc = $tht + $ttva;
                             }
-                            $ain->execute([':devis_id'=>$id,':name'=>$name,':desc'=>trim((string)($a['description'] ?? '')),':qty'=>number_format($qty,2,'.',''),':unit'=>number_format($unit,2,'.',''),':tva'=>number_format($tva,2,'.',''),':tht'=>number_format($tht,2,'.',''),':ttva'=>number_format($ttva,2,'.',''),':tttc'=>number_format($ttc,2,'.','')]);
+                            $ain->execute([':devis_id'=>$id,':name'=>$name,':desc'=>trim((string)($a['description'] ?? '')),':um'=>$um,':qty'=>number_format($qty,2,'.',''),':unit'=>number_format($unit,2,'.',''),':tva'=>number_format($tva,2,'.',''),':tht'=>number_format($tht,2,'.',''),':ttva'=>number_format($ttva,2,'.',''),':tttc'=>number_format($ttc,2,'.','')]);
                         }
                     } else {
                         $names = $_POST['article_name'] ?? [];
                         $descs = $_POST['article_description'] ?? [];
+                        $ums = $_POST['article_um'] ?? [];
                         $qtys = $_POST['quantity'] ?? [];
                         $unit_prices = $_POST['unit_price'] ?? [];
                         $tva_rates = $_POST['tva_rate'] ?? [];
@@ -174,7 +181,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         for ($i=0;$i<count($names);$i++) {
                             $n = trim((string)$names[$i]);
                             if ($n === '') continue;
-                            $ain->execute([':devis_id'=>$id,':name'=>$n,':desc'=>trim((string)$descs[$i]),':qty'=>number_format((float)$qtys[$i],2,'.',''),':unit'=>number_format((float)$unit_prices[$i],2,'.',''),':tva'=>number_format((float)$tva_rates[$i],2,'.',''),':tht'=>number_format((float)($a_tht[$i] ?? 0),2,'.',''),':ttva'=>number_format((float)($a_ttva[$i] ?? 0),2,'.',''),':tttc'=>number_format((float)($a_tttc[$i] ?? 0),2,'.','')]);
+                            $um = trim((string)($ums[$i] ?? ''));
+                            $ain->execute([':devis_id'=>$id,':name'=>$n,':desc'=>trim((string)$descs[$i]),':um'=>$um,':qty'=>number_format((float)$qtys[$i],2,'.',''),':unit'=>number_format((float)$unit_prices[$i],2,'.',''),':tva'=>number_format((float)$tva_rates[$i],2,'.',''),':tht'=>number_format((float)($a_tht[$i] ?? 0),2,'.',''),':ttva'=>number_format((float)($a_ttva[$i] ?? 0),2,'.',''),':tttc'=>number_format((float)($a_tttc[$i] ?? 0),2,'.','')]);
                         }
                     }
 
@@ -228,7 +236,7 @@ if ($q !== '') {
     $where .= ')';
 }
 
-$sql = "SELECT d.*, c.contract_number AS contract_number, c.title AS contract_title FROM devis d LEFT JOIN contracts c ON d.contract_id = c.id $where ORDER BY d.created_at DESC";
+$sql = "SELECT d.*, c.contract_number AS contract_number, c.title AS contract_title, s.name AS stakeholder_name, s.id AS stakeholder_id FROM devis d LEFT JOIN contracts c ON d.contract_id = c.id LEFT JOIN stakeholders s ON d.stakeholder_id = s.id $where ORDER BY d.created_at DESC";
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $devis = $stmt->fetchAll();
@@ -245,6 +253,11 @@ unset($dv);
 $st = $pdo->prepare('SELECT id, contract_number, title FROM contracts WHERE deleted_at IS NULL ORDER BY contract_number ASC');
 $st->execute();
 $contracts = $st->fetchAll();
+
+// fetch stakeholders for client dropdown
+$st2 = $pdo->prepare('SELECT id, name FROM stakeholders WHERE deleted_at IS NULL ORDER BY name ASC');
+$st2->execute();
+$stakeholders = $st2->fetchAll();
 
 ?>
 <!doctype html>
@@ -321,7 +334,7 @@ $contracts = $st->fetchAll();
                         <th hidden>ID</th>
                         <th>Devis #</th>
                         <th hidden >Title</th>
-                        <th>Contract</th>
+                        <th>Contract/Client</th>
                         <th>Status</th>
                         <th>Total TTC</th>
                         <th>Issue</th>
@@ -339,6 +352,8 @@ $contracts = $st->fetchAll();
                         data-title="<?php echo e($d['title']); ?>"
                         data-description="<?php echo e($d['description']); ?>"
                         data-contract_id="<?php echo e($d['contract_id']); ?>"
+                        data-stakeholder_id="<?php echo e($d['stakeholder_id'] ?? ''); ?>"
+                        data-stakeholder_name="<?php echo e($d['stakeholder_name'] ?? ''); ?>"
                         data-status="<?php echo e($d['status']); ?>"
                         data-issue_date="<?php echo e($d['issue_date']); ?>"
                         data-expiry_date="<?php echo e($d['expiry_date']); ?>"
@@ -351,15 +366,16 @@ $contracts = $st->fetchAll();
                         <td hidden><?php echo e($d['id']); ?></td>
                         <td><?php echo e($d['devis_number']); ?></td>
                         <td hidden ><?php echo e($d['title']); ?><div class="muted muted-small"><?php echo e(substr($d['description'] ?? '',0,80)); ?></div></td>
-                        <td><?php echo e($d['contract_number'] ?? $d['contract_id']); ?></td>
+                        <td><?php echo e($d['contract_number'] ?? ($d['stakeholder_name'] ?? $d['contract_id'])); ?></td>
                         <td><?php echo e($d['status']); ?></td>
-                        <td><?php echo e(number_format((float)$d['total_ttc'],2)); ?></td>
+                        <td><?php echo e(number_format((float)$d['total_ttc'],2,'.',' ')); ?></td>
                         <td><?php echo e($d['issue_date']); ?></td>
                         <td hidden><?php echo e($d['expiry_date']); ?></td>
                         <td>
                             <div class="actions">
                                 <button class="btn btn-view ghost" type="button" onclick="(function(b){var tr=b.closest('.devis-row'); openModal('viewDevisModal'); window.populateViewDevis(tr);})(this)" title="View"><i class="fa-solid fa-eye"></i></button>
                                 <button class="btn btn-edit" type="button" onclick="(function(b){var tr=b.closest('.devis-row'); openModal('editDevisModal'); window.populateEditDevis(tr);})(this)" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button class="btn" type="button" onclick="(function(b){var tr=b.closest('.devis-row'); window.openPrintDevis && window.openPrintDevis(tr);})(this)" title="Print"><i class="fa-solid fa-print"></i></button>
                                 <button class="btn btn-delete" type="button" onclick="(function(b){var tr=b.closest('.devis-row'); fillForm('deleteDevisModal',{id:tr.getAttribute('data-id')}); openModal('deleteDevisModal');})(this)" title="Delete"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </td>
@@ -391,6 +407,14 @@ $contracts = $st->fetchAll();
                         <option value="<?php echo e($c['id']); ?>"><?php echo e($c['contract_number']); ?> — <?php echo e($c['title']); ?></option>
                     <?php endforeach; ?>
                 </select></label>
+                <label>Client (if no contract selected)
+                    <select name="stakeholder_id">
+                        <option value="">—</option>
+                        <?php foreach($stakeholders as $s): ?>
+                            <option value="<?php echo e($s['id']); ?>"><?php echo e($s['name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
                 <label>Title<input name="title" type="text" required></label>
                 <label>Description<textarea name="description"></textarea></label>
                 <label>Status<select name="status">
@@ -409,15 +433,16 @@ $contracts = $st->fetchAll();
                     <div class="table-responsive">
                         <table class="articles-table" id="articlesTable">
                             <thead>
-                                <tr>
-                                    <th>Article Name</th>
-                                    <th>Description</th>
-                                    <th style="width:90px;text-align:right">Qte</th>
-                                    <th style="width:110px;text-align:right">Unit Price</th>
-                                    <th style="width:90px;text-align:right">TVA (%)</th>
-                                    <th style="width:140px;text-align:right">TTC</th>
-                                    <th style="width:60px">Actions</th>
-                                </tr>
+                                        <tr>
+                                            <th>Article Name</th>
+                                            <th>Description</th>
+                                            <th style="width:80px;text-align:center">UM</th>
+                                            <th style="width:90px;text-align:right">Qte</th>
+                                            <th style="width:110px;text-align:right">Unit Price</th>
+                                            <th style="width:90px;text-align:right">TVA (%)</th>
+                                            <th style="width:140px;text-align:right">TTC</th>
+                                            <th style="width:60px">Actions</th>
+                                        </tr>
                             </thead>
                             <tbody>
                                 <!-- rows appended by JS -->
@@ -464,6 +489,14 @@ $contracts = $st->fetchAll();
                         <option value="<?php echo e($c['id']); ?>"><?php echo e($c['contract_number']); ?> — <?php echo e($c['title']); ?></option>
                     <?php endforeach; ?>
                 </select></label>
+                <label>Client (if no contract selected)
+                    <select name="stakeholder_id">
+                        <option value="">—</option>
+                        <?php foreach($stakeholders as $s): ?>
+                            <option value="<?php echo e($s['id']); ?>"><?php echo e($s['name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
                 <label>Title<input name="title" type="text" required></label>
                 <label>Description<textarea name="description"></textarea></label>
                 <label>Status<select name="status">
@@ -485,6 +518,7 @@ $contracts = $st->fetchAll();
                                 <tr>
                                     <th>Article Name</th>
                                     <th>Description</th>
+                                    <th style="width:80px;text-align:center">UM</th>
                                     <th style="width:90px;text-align:right">Qte</th>
                                     <th style="width:110px;text-align:right">Unit Price</th>
                                     <th style="width:90px;text-align:right">TVA (%)</th>

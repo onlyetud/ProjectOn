@@ -467,7 +467,7 @@
                 </select>
 
                 <label for="budget">Budget</label>
-                <input id="budget" name="budget" type="number" step="0.01">
+                <input id="budget" name="budget" type="number" step="10">
 
                 <label for="other_info">Other Info</label>
                 <textarea id="other_info" name="other_info"></textarea>
@@ -537,7 +537,7 @@
                 </select>
 
                 <label for="ebudget">Budget</label>
-                <input id="ebudget" name="budget" type="number" step="0.01">
+                <input id="ebudget" name="budget" type="number" step="10">
 
                 <label for="eother_info">Other Info</label>
                 <textarea id="eother_info" name="other_info"></textarea>
